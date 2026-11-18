@@ -1,0 +1,141 @@
+<!-- LIFE_MANAGER_V2_AUTH_MOBILE -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{{ title or 'إدارة حياتي | Life Manager' }}</title>
+    <!-- ربط ملف التنسيق CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+    <!-- خطوط Google Fonts (Cairo للعربية و Inter للإنجليزية) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- القائمة الجانبية لسطح المكتب (Desktop Sidebar Navigation) -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-brand">
+                    <span class="brand-icon">⚡</span>
+                    <h2 data-i18n="brand_name">إدارة حياتي</h2>
+                </div>
+
+                {% if current_user %}
+                <div class="user-profile-box">
+                    <div class="user-avatar">{{ (current_user.display_name or current_user.username)[0]|upper }}</div>
+                    <div class="user-details">
+                        <strong>{{ current_user.display_name }}</strong>
+                        <small>@{{ current_user.username }}</small>
+                    </div>
+                </div>
+                {% endif %}
+
+                <ul class="nav-links">
+                    <li>
+                        <a href="{{ url_for('home') }}" class="{{ 'active' if active_page == 'dashboard' else '' }}">
+                            <span class="icon">🏠</span>
+                            <span data-i18n="nav_dashboard">الرئيسية</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('schedule') }}" class="{{ 'active' if active_page == 'schedule' else '' }}">
+                            <span class="icon">📅</span>
+                            <span data-i18n="nav_schedule">الجدول</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('habits') }}" class="{{ 'active' if active_page == 'habits' else '' }}">
+                            <span class="icon">🔥</span>
+                            <span data-i18n="nav_habits">العادات</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('finance') }}" class="{{ 'active' if active_page == 'finance' else '' }}">
+                            <span class="icon">💰</span>
+                            <span data-i18n="nav_finance">الماليات</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            {% if current_user %}
+            <div class="sidebar-footer">
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <span class="icon">🚪</span>
+                    <span data-i18n="nav_logout">تسجيل الخروج</span>
+                </a>
+            </div>
+            {% endif %}
+        </aside>
+
+        <!-- منطقة المحتوى الرئيسية (Main Content Area) -->
+        <main class="main-content">
+            <!-- الشريط العلوي (Top Header Bar) -->
+            <header class="top-header">
+                <div class="header-title">
+                    <div class="mobile-brand-row">
+                        <span class="brand-icon">⚡</span>
+                        <span class="mobile-brand-text" data-i18n="brand_name">إدارة حياتي</span>
+                        {% if current_user %}
+                        <span class="mobile-user-pill">👤 {{ current_user.display_name }}</span>
+                        {% endif %}
+                    </div>
+                    {% block page_header %}
+                    <h1 data-i18n="header_welcome">مرحباً بك مجدداً 👋</h1>
+                    <p data-i18n="header_subtitle">إليك ملخص سريع لأهم أنشطة اليوم.</p>
+                    {% endblock %}
+                </div>
+                <div class="header-controls">
+                    <!-- زر تغيير اللغة (Language Switcher) -->
+                    <button id="lang-toggle" class="control-btn" type="button" title="تغيير اللغة / Toggle Language">
+                        🌐 <span id="lang-text">English</span>
+                    </button>
+                    <!-- زر تغيير المظهر (Theme Switcher) -->
+                    <button id="theme-toggle" class="control-btn" type="button" title="تغيير النمط / Toggle Theme">
+                        <span id="theme-icon">☀️</span>
+                    </button>
+                    {% if current_user %}
+                    <a href="{{ url_for('logout') }}" class="control-btn mobile-logout-top" title="تسجيل الخروج / Sign Out">
+                        🚪 <span class="hide-xs" data-i18n="nav_logout">تسجيل الخروج</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- محتوى الصفحة المتغير -->
+            {% block content %}{% endblock %}
+            {% block link %}{% endblock %}
+        </main>
+
+        <!-- شريط التنقل السفلي للهواتف (Mobile Bottom Navigation Bar) -->
+        <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+            <a href="{{ url_for('home') }}" class="mobile-nav-item {{ 'active' if active_page == 'dashboard' else '' }}">
+                <span class="m-icon">🏠</span>
+                <span class="m-label" data-i18n="nav_dashboard">الرئيسية</span>
+            </a>
+            <a href="{{ url_for('schedule') }}" class="mobile-nav-item {{ 'active' if active_page == 'schedule' else '' }}">
+                <span class="m-icon">📅</span>
+                <span class="m-label" data-i18n="nav_schedule">الجدول</span>
+            </a>
+            <a href="{{ url_for('habits') }}" class="mobile-nav-item {{ 'active' if active_page == 'habits' else '' }}">
+                <span class="m-icon">🔥</span>
+                <span class="m-label" data-i18n="nav_habits">العادات</span>
+            </a>
+            <a href="{{ url_for('finance') }}" class="mobile-nav-item {{ 'active' if active_page == 'finance' else '' }}">
+                <span class="m-icon">💰</span>
+                <span class="m-label" data-i18n="nav_finance">الماليات</span>
+            </a>
+            <a href="{{ url_for('logout') }}" class="mobile-nav-item logout-nav-item">
+                <span class="m-icon">🚪</span>
+                <span class="m-label" data-i18n="nav_logout_short">خروج</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- ربط ملف الجافاسكريبت JS -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

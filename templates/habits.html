@@ -1,0 +1,129 @@
+<!-- LIFE_MANAGER_V2_AUTH_MOBILE -->
+{% extends "base.html" %}
+
+{% block page_header %}
+<h1 data-i18n="habits_page_title">🔥 تتبع العادات اليومية</h1>
+<p data-i18n="habits_page_subtitle">ابْنِ عادات إيجابية مستمرة وتابع سلسلة التزامك اليومي (Streak).</p>
+{% endblock %}
+
+{% block content %}
+<!-- إحصائيات العادات -->
+<div class="stats-row">
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="total_habits">إجمالي العادات</span>
+        <strong class="mini-stat-value">{{ total_habits }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="kpi_habits_done">أُنجزت اليوم</span>
+        <strong class="mini-stat-value text-success">{{ completed_today }} / {{ total_habits }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="best_streak_label">أفضل سلسلة التزام</span>
+        <strong class="mini-stat-value text-accent">{{ best_streak }} <span data-i18n="days_unit">أيام</span> 🔥</strong>
+    </div>
+</div>
+
+<div class="page-layout-two-col">
+    <!-- نموذج إضافة عادة جديدة -->
+    <section class="card">
+        <div class="card-header">
+            <h3 data-i18n="add_new_habit_title">➕ إضافة عادة جديدة</h3>
+        </div>
+        <form action="{{ url_for('add_habit_route') }}" method="POST" class="stack-form">
+            <div class="form-group">
+                <label data-i18n="label_habit_name">اسم العادة</label>
+                <input type="text" name="name" class="input-field" data-i18n-placeholder="placeholder_habit_name" placeholder="مثال: قراءة 10 صفحات، أذكار، رياضة..." required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-i18n="label_habit_icon">الأيقونة</label>
+                    <select name="icon" class="input-field">
+                        <option value="💧">💧 ماء وصحة</option>
+                        <option value="📚">📚 قراءة ومذاكرة</option>
+                        <option value="💻">💻 برمجة وتطوير</option>
+                        <option value="🏋️">🏋️ رياضة ولياقة</option>
+                        <option value="🕌">🕌 عبادة وأذكار</option>
+                        <option value="☀️">☀️ استيقاظ مبكر</option>
+                        <option value="🔥">🔥 هدف عام</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="label_target_days">الهدف الأسبوعي (أيام)</label>
+                    <select name="target_days" class="input-field">
+                        <option value="7" selected>7 أيام (يومياً)</option>
+                        <option value="6">6 أيام في الأسبوع</option>
+                        <option value="5">5 أيام في الأسبوع</option>
+                        <option value="4">4 أيام في الأسبوع</option>
+                        <option value="3">3 أيام في الأسبوع</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary full-width" data-i18n="btn_save_habit">إضافة العادة</button>
+        </form>
+    </section>
+
+    <!-- قائمة العادات الحالية -->
+    <section class="card">
+        <div class="card-header">
+            <h3 data-i18n="habits_list_title">عاداتك الحالية</h3>
+            <span class="card-badge">{{ completed_today }} / {{ total_habits }}</span>
+        </div>
+
+        <div class="habits-grid detailed-habits-list">
+            {% for habit in habits %}
+            <div class="habit-card-item {{ 'active' if habit.completed_today else '' }}">
+                <div class="habit-main-row">
+                    <div class="habit-title-group">
+                        <span class="habit-emoji-lg">{{ habit.icon }}</span>
+                        <div>
+                            <h4>{{ habit.name }}</h4>
+                            <small class="task-meta">
+                                <span data-i18n="weekly_goal">الهدف الأسبوعي:</span> {{ habit.target_days }} <span data-i18n="days_unit">أيام</span>
+                                {% if habit.last_completed_date %} | ✓ {{ habit.last_completed_date }}{% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="habit-controls">
+                        <span class="streak-badge">{{ habit.streak }} <span data-i18n="days_unit">أيام</span> 🔥</span>
+
+                        <!-- زر إنجاز اليوم -->
+                        <form action="{{ url_for('toggle_habit_route', habit_id=habit.id) }}" method="POST" class="inline-form">
+                            <input type="hidden" name="redirect_to" value="habits">
+                            <button type="submit" class="btn-check-habit {{ 'checked' if habit.completed_today else '' }}">
+                                {% if habit.completed_today %}
+                                ✓ <span data-i18n="habit_done_btn">مكتمل اليوم</span>
+                                {% else %}
+                                + <span data-i18n="habit_mark_btn">تسجيل اليوم</span>
+                                {% endif %}
+                            </button>
+                        </form>
+
+                        <!-- زر تصفير السلسلة -->
+                        <form action="{{ url_for('reset_habit_route', habit_id=habit.id) }}" method="POST" class="inline-form">
+                            <button type="submit" class="btn-secondary-sm" title="تصفير العداد">↺</button>
+                        </form>
+
+                        <!-- زر حذف العادة -->
+                        <form action="{{ url_for('delete_habit_route', habit_id=habit.id) }}" method="POST" class="inline-form">
+                            <button type="submit" class="btn-delete" title="حذف العادة">🗑️</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- شريط التقدم نحو الهدف الأسبوعي -->
+                {% set pct = ((habit.streak % (habit.target_days or 7)) / (habit.target_days or 7) * 100)|round(0, 'ceil') if habit.streak > 0 else 0 %}
+                {% set bar_pct = 100 if (habit.streak > 0 and habit.streak % (habit.target_days or 7) == 0) else pct %}
+                <div class="progress-bar sm-bar">
+                    <div class="progress-fill" style="width: {{ bar_pct }}%;"></div>
+                </div>
+            </div>
+            {% else %}
+            <p class="empty-item" data-i18n="no_habits_msg">لا توجد عادات مسجلة بعد. ابدأ بإضافة عادتك الأولى!</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+<!-- LIFE_MANAGER_V2_AUTH_MOBILE -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0c">
+    <title>{{ title or 'تسجيل الدخول | Life Manager' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-body">
+    <div class="auth-top-bar">
+        <button id="lang-toggle" class="control-btn" type="button" title="تغيير اللغة / Toggle Language">
+            🌐 <span id="lang-text">English</span>
+        </button>
+        <button id="theme-toggle" class="control-btn" type="button" title="تغيير النمط / Toggle Theme">
+            <span id="theme-icon">☀️</span>
+        </button>
+    </div>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-brand">
+                <div class="auth-logo-circle">⚡</div>
+                <h1 data-i18n="brand_name">إدارة حياتي</h1>
+                <p data-i18n="auth_subtitle">سجّل دخولك لإدارة جدولك، عاداتك، ومالياتك من أي جهاز.</p>
+            </div>
+
+            {% if error %}
+            <div class="auth-alert auth-alert-error">
+                ⚠️ <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <!-- أزرار التبديل بين تسجيل الدخول وإنشاء حساب -->
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab-btn {{ 'active' if mode != 'register' else '' }}" id="tab-btn-login" onclick="switchAuthTab('login')" data-i18n="tab_login">
+                    تسجيل الدخول
+                </button>
+                <button type="button" class="auth-tab-btn {{ 'active' if mode == 'register' else '' }}" id="tab-btn-register" onclick="switchAuthTab('register')" data-i18n="tab_register">
+                    إنشاء حساب جديد
+                </button>
+            </div>
+
+            <!-- 1. نموذج تسجيل الدخول (Sign In Form) -->
+            <form action="{{ url_for('login') }}" method="POST" id="form-login" class="stack-form auth-form {{ 'hidden-form' if mode == 'register' else '' }}">
+                <div class="form-group">
+                    <label for="login-username" data-i18n="label_username">اسم المستخدم</label>
+                    <input type="text" id="login-username" name="username" class="input-field" data-i18n-placeholder="placeholder_username" placeholder="مثال: admin أو اسمك..." autocomplete="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password" data-i18n="label_password">كلمة المرور</label>
+                    <div class="password-input-wrap">
+                        <input type="password" id="login-password" name="password" class="input-field" data-i18n-placeholder="placeholder_password" placeholder="أدخل كلمة المرور..." autocomplete="current-password" required>
+                        <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="إظهار / إخفاء">👁️</button>
+                    </div>
+                </div>
+
+                <label class="remember-row">
+                    <input type="checkbox" name="remember" checked>
+                    <span data-i18n="remember_me">تذكرني على هذا الجهاز</span>
+                </label>
+
+                <button type="submit" class="btn-primary full-width auth-submit-btn" data-i18n="btn_login_submit">
+                    دخول إلى لوحة التحكم ←
+                </button>
+
+                <div class="demo-login-box">
+                    <div class="demo-info">
+                        <span data-i18n="demo_hint_label">الحساب الافتراضي الجاهز:</span>
+                        <code>admin</code> / <code>1234</code>
+                    </div>
+                    <button type="button" class="btn-demo-fill" onclick="fillDemoCredentials()" data-i18n="btn_quick_fill">
+                        تعبئة سريعة ⚡
+                    </button>
+                </div>
+            </form>
+
+            <!-- 2. نموذج إنشاء حساب جديد (Create Account Form) -->
+            <form action="{{ url_for('register') }}" method="POST" id="form-register" class="stack-form auth-form {{ '' if mode == 'register' else 'hidden-form' }}">
+                <div class="form-group">
+                    <label for="reg-display" data-i18n="label_display_name">الاسم الشخصي</label>
+                    <input type="text" id="reg-display" name="display_name" class="input-field" data-i18n-placeholder="placeholder_display_name" placeholder="مثال: سهل صديق" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-username" data-i18n="label_username">اسم المستخدم (للدخول)</label>
+                    <input type="text" id="reg-username" name="username" class="input-field" data-i18n-placeholder="placeholder_username" placeholder="مثال: sahl" autocomplete="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password" data-i18n="label_password">كلمة المرور</label>
+                    <div class="password-input-wrap">
+                        <input type="password" id="reg-password" name="password" class="input-field" data-i18n-placeholder="placeholder_password" placeholder="اختر كلمة مرور..." autocomplete="new-password" required>
+                        <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('reg-password', this)" title="إظهار / إخفاء">👁️</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary full-width auth-submit-btn" data-i18n="btn_register_submit">
+                    إنشاء الحساب والدخول ←
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

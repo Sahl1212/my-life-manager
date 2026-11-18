@@ -1,0 +1,173 @@
+<!-- LIFE_MANAGER_V2_AUTH_MOBILE -->
+{% extends "base.html" %}
+
+{% block page_header %}
+<h1 data-i18n="finance_page_title">💰 إدارة الماليات والميزانية</h1>
+<p data-i18n="finance_page_subtitle">تابع دخلك، مصروفاتك، وميزانيتك الشهرية بدقة.</p>
+{% endblock %}
+
+{% block content %}
+<!-- بطاقات الملخص المالي -->
+<div class="stats-row">
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="finance_balance">الرصيد الصافي</span>
+        <strong class="mini-stat-value">${{ "%.2f"|format(finance.balance) }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="finance_income">إجمالي الدخل</span>
+        <strong class="mini-stat-value text-success">+${{ "%.2f"|format(finance.total_income) }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="finance_spent">إجمالي المصروفات</span>
+        <strong class="mini-stat-value text-danger">-${{ "%.2f"|format(finance.total_expense) }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="monthly_budget_label">الميزانية الشهرية</span>
+        <strong class="mini-stat-value text-accent">${{ "%.2f"|format(finance.monthly_budget) }} ({{ finance.budget_percent }}%)</strong>
+    </div>
+</div>
+
+<div class="page-layout-two-col">
+    <!-- العمود الأول: إضافة معاملة + تعديل الميزانية -->
+    <div class="col-stack">
+        <section class="card">
+            <div class="card-header">
+                <h3 data-i18n="add_tx_title">➕ تسجيل معاملة مالية</h3>
+            </div>
+            <form action="{{ url_for('add_transaction_route') }}" method="POST" class="stack-form">
+                <div class="form-group">
+                    <label data-i18n="label_tx_title">الوصف / البند</label>
+                    <input type="text" name="title" class="input-field" data-i18n-placeholder="placeholder_tx_title" placeholder="مثال: شراء كتب، وجبة غداء، مكافأة..." required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="label_tx_amount">المبلغ ($)</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" class="input-field" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="label_tx_type">نوع المعاملة</label>
+                        <select name="tx_type" class="input-field">
+                            <option value="expense" data-i18n="type_expense">🔻 مصروف (Expense)</option>
+                            <option value="income" data-i18n="type_income">🔺 دخل / إيداع (Income)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="label_category">التصنيف</label>
+                        <select name="category" class="input-field">
+                            <option value="food">🍔 طعام ومشروبات</option>
+                            <option value="study">📚 دراسة وكتب</option>
+                            <option value="transport">🚌 مواصلات وإنترنت</option>
+                            <option value="salary">💵 راتب / منحة</option>
+                            <option value="freelance">💻 عمل حر</option>
+                            <option value="entertainment">🎮 ترفيه</option>
+                            <option value="general">📦 عام</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="label_date">التاريخ</label>
+                        <input type="date" name="tx_date" class="input-field">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="label_notes">ملاحظات (اختياري)</label>
+                    <input type="text" name="notes" class="input-field" data-i18n-placeholder="placeholder_notes" placeholder="أي تفاصيل إضافية...">
+                </div>
+
+                <button type="submit" class="btn-primary full-width" data-i18n="btn_save_tx">حفظ المعاملة المالية</button>
+            </form>
+        </section>
+
+        <!-- تحديث الميزانية الشهرية وتوزيع المصروفات -->
+        <section class="card">
+            <div class="card-header">
+                <h3 data-i18n="budget_settings_title">🎯 الميزانية وتوزيع المصروفات</h3>
+            </div>
+
+            <form action="{{ url_for('update_budget_route') }}" method="POST" class="quick-form">
+                <input type="number" step="10" min="10" name="monthly_budget" class="input-field" value="{{ finance.monthly_budget }}" required>
+                <button type="submit" class="btn-primary" data-i18n="btn_update_budget">تحديث الميزانية</button>
+            </form>
+
+            <div class="budget-box">
+                <div class="budget-header">
+                    <span data-i18n="budget_usage">نسبة استهلاك الميزانية</span>
+                    <span>{{ finance.budget_percent }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ finance.budget_percent }}%;"></div>
+                </div>
+            </div>
+
+            {% if finance.expenses_by_category %}
+            <div class="category-breakdown">
+                <h4 class="sub-heading" data-i18n="expenses_by_cat_title">المصروفات حسب التصنيف:</h4>
+                {% for item in finance.expenses_by_category %}
+                <div class="cat-stat-row">
+                    <span>{{ item.category }}</span>
+                    <strong>${{ "%.2f"|format(item.total) }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <!-- العمود الثاني: سجل المعاملات المالية -->
+    <section class="card">
+        <div class="card-header wrap-header">
+            <h3 data-i18n="tx_history_title">سجل المعاملات المالية</h3>
+            <div class="filter-pills">
+                <a href="{{ url_for('finance', type='all') }}"
+                   class="filter-pill {{ 'active' if current_type == 'all' else '' }}" data-i18n="filter_all">الكل</a>
+                <a href="{{ url_for('finance', type='income') }}"
+                   class="filter-pill {{ 'active' if current_type == 'income' else '' }}" data-i18n="type_income_short">الدخل</a>
+                <a href="{{ url_for('finance', type='expense') }}"
+                   class="filter-pill {{ 'active' if current_type == 'expense' else '' }}" data-i18n="type_expense_short">المصروفات</a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="th_title">البند</th>
+                        <th data-i18n="th_category">التصنيف</th>
+                        <th data-i18n="th_date">التاريخ</th>
+                        <th data-i18n="th_amount">المبلغ</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td>
+                            <strong>{{ tx.title }}</strong>
+                            {% if tx.notes %}<br><small class="task-meta">{{ tx.notes }}</small>{% endif %}
+                        </td>
+                        <td><span class="tag-badge">{{ tx.category }}</span></td>
+                        <td class="task-meta">{{ tx.tx_date }}</td>
+                        <td class="{{ 'text-success' if tx.tx_type == 'income' else 'text-danger' }} font-bold">
+                            {{ '+' if tx.tx_type == 'income' else '-' }}${{ "%.2f"|format(tx.amount) }}
+                        </td>
+                        <td>
+                            <form action="{{ url_for('delete_transaction_route', tx_id=tx.id) }}" method="POST" class="inline-form">
+                                <button type="submit" class="btn-delete" title="حذف">🗑️</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="empty-item" data-i18n="no_tx_msg">لا توجد معاملات مالية مسجلة.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

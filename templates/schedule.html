@@ -1,0 +1,134 @@
+<!-- LIFE_MANAGER_V2_AUTH_MOBILE -->
+{% extends "base.html" %}
+
+{% block page_header %}
+<h1 data-i18n="schedule_page_title">📅 الجدول وإدارة المهام</h1>
+<p data-i18n="schedule_page_subtitle">نظّم محاضراتك، جلسات البرمجة، ومهامك اليومية بوضوح.</p>
+{% endblock %}
+
+{% block content %}
+<!-- إحصائيات المهام -->
+<div class="stats-row">
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="total_tasks">إجمالي المهام</span>
+        <strong class="mini-stat-value">{{ total_count }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="kpi_pending_tasks">قيد الإنجاز</span>
+        <strong class="mini-stat-value text-accent">{{ pending_count }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="completed_tasks">مهام مكتملة</span>
+        <strong class="mini-stat-value text-success">{{ completed_count }}</strong>
+    </div>
+</div>
+
+<div class="page-layout-two-col">
+    <!-- نموذج إضافة مهمة جديدة -->
+    <section class="card">
+        <div class="card-header">
+            <h3 data-i18n="add_new_task_title">➕ إضافة مهمة جديدة</h3>
+        </div>
+        <form action="{{ url_for('add_task_route') }}" method="POST" class="stack-form">
+            <input type="hidden" name="redirect_to" value="schedule">
+
+            <div class="form-group">
+                <label data-i18n="label_task_title">عنوان المهمة</label>
+                <input type="text" name="title" class="input-field" data-i18n-placeholder="placeholder_task_title" placeholder="مثال: مذاكرة مادة الرياضيات..." required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-i18n="label_category">التصنيف</label>
+                    <select name="category" class="input-field">
+                        <option value="study" data-i18n="cat_study">🎓 دراسة ومحاضرات</option>
+                        <option value="coding" data-i18n="cat_coding">💻 برمجة ومشاريع</option>
+                        <option value="sport" data-i18n="cat_sport">🏋️ رياضة وصحة</option>
+                        <option value="personal" data-i18n="cat_personal">📌 شخصي وعام</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="label_priority">الأولوية</label>
+                    <select name="priority" class="input-field">
+                        <option value="high" data-i18n="prio_high">🔴 عالية</option>
+                        <option value="medium" selected data-i18n="prio_medium">🟡 متوسطة</option>
+                        <option value="low" data-i18n="prio_low">🟢 منخفضة</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-i18n="label_date">التاريخ</label>
+                    <input type="date" name="due_date" class="input-field">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="label_time">الوقت</label>
+                    <input type="time" name="due_time" class="input-field">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="label_notes">ملاحظات (اختياري)</label>
+                <input type="text" name="notes" class="input-field" data-i18n-placeholder="placeholder_notes" placeholder="تفاصيل إضافية عن المهمة...">
+            </div>
+
+            <button type="submit" class="btn-primary full-width" data-i18n="btn_save_task">حفظ المهمة في الجدول</button>
+        </form>
+    </section>
+
+    <!-- قائمة المهام مع الفلاتر -->
+    <section class="card">
+        <div class="card-header wrap-header">
+            <h3 data-i18n="schedule_list_title">قائمة المهام والمواعيد</h3>
+            <!-- أزرار التصفية (Filters) -->
+            <div class="filter-pills">
+                <a href="{{ url_for('schedule', status='all', category=current_category) }}"
+                   class="filter-pill {{ 'active' if current_status == 'all' else '' }}" data-i18n="filter_all">الكل</a>
+                <a href="{{ url_for('schedule', status='pending', category=current_category) }}"
+                   class="filter-pill {{ 'active' if current_status == 'pending' else '' }}" data-i18n="filter_pending">المتبقية</a>
+                <a href="{{ url_for('schedule', status='completed', category=current_category) }}"
+                   class="filter-pill {{ 'active' if current_status == 'completed' else '' }}" data-i18n="filter_completed">المكتملة</a>
+            </div>
+        </div>
+
+        <ul class="task-list detailed-task-list">
+            {% for task in tasks %}
+            <li class="{{ 'task-done' if task.completed else '' }}">
+                <form action="{{ url_for('toggle_task_route', task_id=task.id) }}" method="POST" class="inline-form">
+                    <input type="hidden" name="redirect_to" value="schedule">
+                    <input type="checkbox"
+                           id="task-{{ task.id }}"
+                           {% if task.completed %}checked{% endif %}
+                           onchange="this.form.submit()">
+                </form>
+
+                <div class="task-info">
+                    <div class="task-title-line">
+                        <label for="task-{{ task.id }}" class="{{ 'line-through' if task.completed else '' }}">
+                            {{ task.title }}
+                        </label>
+                        <span class="tag-badge cat-{{ task.category }}">{{ task.category }}</span>
+                        <span class="tag-badge prio-badge-{{ task.priority }}">{{ task.priority }}</span>
+                    </div>
+                    {% if task.notes %}
+                    <p class="task-notes">{{ task.notes }}</p>
+                    {% endif %}
+                    <div class="task-meta-row">
+                        {% if task.due_date %}<span>📅 {{ task.due_date }}</span>{% endif %}
+                        {% if task.due_time %}<span>⏰ {{ task.due_time }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <form action="{{ url_for('delete_task_route', task_id=task.id) }}" method="POST" class="inline-form">
+                    <input type="hidden" name="redirect_to" value="schedule">
+                    <button type="submit" class="btn-delete" title="حذف المهمة">🗑️</button>
+                </form>
+            </li>
+            {% else %}
+            <li class="empty-item" data-i18n="no_tasks_msg">لا توجد مهام مطابقة للفلتر المحدد.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

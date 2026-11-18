@@ -1,0 +1,140 @@
+<!-- LIFE_MANAGER_V2_AUTH_MOBILE -->
+{% extends "base.html" %}
+
+{% block page_header %}
+<h1 data-i18n="header_welcome">مرحباً بك مجدداً 👋</h1>
+<p data-i18n="header_subtitle">إليك ملخص سريع لأهم أنشطة اليوم من قاعدة البيانات.</p>
+{% endblock %}
+
+{% block content %}
+<!-- شريط الإحصائيات السريعة (Quick Overview KPIs) -->
+<div class="stats-row">
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="kpi_pending_tasks">مهام متبقية</span>
+        <strong class="mini-stat-value">{{ pending_count }} / {{ total_tasks_count }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="kpi_habits_done">عادات منجزة اليوم</span>
+        <strong class="mini-stat-value text-success">{{ completed_habits_count }} / {{ habits|length }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="finance_balance">الرصيد الحالي</span>
+        <strong class="mini-stat-value">${{ "%.2f"|format(finance.balance) }}</strong>
+    </div>
+    <div class="mini-stat-card">
+        <span class="mini-stat-label" data-i18n="finance_spent">مصروفات الشهر</span>
+        <strong class="mini-stat-value text-accent">${{ "%.2f"|format(finance.total_expense) }}</strong>
+    </div>
+</div>
+
+<!-- شبكة البطاقات الرئيسية (Dashboard Grid Widgets) -->
+<div class="dashboard-grid">
+
+    <!-- 1. بطاقة جدول اليوم (Schedule Widget) -->
+    <section class="card">
+        <div class="card-header">
+            <h3 data-i18n="card_schedule_title">جدول اليوم</h3>
+            <a href="{{ url_for('schedule') }}" class="card-badge link-badge">
+                <span>{{ pending_count }}</span> <span data-i18n="tasks_remaining">مهام متبقية</span> ←
+            </a>
+        </div>
+
+        <ul class="task-list">
+            {% for task in tasks %}
+            <li class="{{ 'task-done' if task.completed else '' }}">
+                <form action="{{ url_for('toggle_task_route', task_id=task.id) }}" method="POST" class="inline-form">
+                    <input type="hidden" name="redirect_to" value="home">
+                    <input type="checkbox"
+                           id="dash-task-{{ task.id }}"
+                           class="task-checkbox"
+                           data-task-id="{{ task.id }}"
+                           {% if task.completed %}checked{% endif %}
+                           onchange="this.form.submit()">
+                </form>
+                <div class="task-info">
+                    <label for="dash-task-{{ task.id }}" class="{{ 'line-through' if task.completed else '' }}">
+                        {{ task.title }}
+                    </label>
+                    {% if task.due_time %}
+                    <small class="task-meta">⏰ {{ task.due_time }}</small>
+                    {% endif %}
+                </div>
+                <span class="priority-dot priority-{{ task.priority }}" title="{{ task.priority }}"></span>
+            </li>
+            {% else %}
+            <li class="empty-item" data-i18n="no_tasks_msg">لا توجد مهام حالياً. أضف مهمتك الأولى!</li>
+            {% endfor %}
+        </ul>
+
+        <!-- إضافة مهمة سريعة من الرئيسية -->
+        <form action="{{ url_for('add_task_route') }}" method="POST" class="quick-form">
+            <input type="hidden" name="redirect_to" value="home">
+            <input type="text" name="title" class="input-field" data-i18n-placeholder="placeholder_quick_task" placeholder="أضف مهمة سريعة..." required>
+            <button type="submit" class="btn-primary" data-i18n="btn_add">إضافة</button>
+        </form>
+    </section>
+
+    <!-- 2. بطاقة ملخص الماليات (Finance Widget) -->
+    <section class="card">
+        <div class="card-header">
+            <h3 data-i18n="card_finance_title">ملخص الماليات</h3>
+            <a href="{{ url_for('finance') }}" class="card-badge link-badge" data-i18n="view_details">التفاصيل ←</a>
+        </div>
+        <div class="finance-stats">
+            <div class="stat-item">
+                <span class="stat-label" data-i18n="finance_balance">الرصيد الحالي</span>
+                <span class="stat-value">${{ "%.2f"|format(finance.balance) }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label" data-i18n="finance_income">إجمالي الدخل</span>
+                <span class="stat-value text-success">+${{ "%.2f"|format(finance.total_income) }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label" data-i18n="finance_spent">مصروفات الشهر</span>
+                <span class="stat-value text-danger">-${{ "%.2f"|format(finance.total_expense) }}</span>
+            </div>
+        </div>
+
+        <!-- شريط استهلاك الميزانية -->
+        <div class="budget-box">
+            <div class="budget-header">
+                <span data-i18n="budget_usage">استهلاك الميزانية الشهرية</span>
+                <span>{{ finance.budget_percent }}% (${{ "%.0f"|format(finance.total_expense) }} / ${{ "%.0f"|format(finance.monthly_budget) }})</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ finance.budget_percent }}%;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. بطاقة تتبع العادات (Habit Tracker Widget) -->
+    <section class="card">
+        <div class="card-header">
+            <h3 data-i18n="card_habits_title">تتبع العادات</h3>
+            <a href="{{ url_for('habits') }}" class="card-badge link-badge" data-i18n="manage_habits">إدارة العادات ←</a>
+        </div>
+        <div class="habits-grid">
+            {% for habit in habits %}
+            <div class="habit-pill {{ 'active' if habit.completed_today else '' }}">
+                <div class="habit-title-group">
+                    <span class="habit-emoji">{{ habit.icon }}</span>
+                    <span>{{ habit.name }}</span>
+                </div>
+                <div class="habit-actions-group">
+                    <span class="streak">{{ habit.streak }} <span data-i18n="days_unit">أيام</span> 🔥</span>
+                    <form action="{{ url_for('toggle_habit_route', habit_id=habit.id) }}" method="POST" class="inline-form">
+                        <input type="hidden" name="redirect_to" value="home">
+                        <button type="submit" class="btn-icon {{ 'btn-done' if habit.completed_today else '' }}" title="تسجيل إنجاز اليوم">
+                            {{ '✓' if habit.completed_today else '+' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <p class="empty-item" data-i18n="no_habits_msg">لا توجد عادات مضافة بعد.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
+{% endblock %}
